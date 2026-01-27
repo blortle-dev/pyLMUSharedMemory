@@ -33,6 +33,27 @@ def get_root_logger_name():
 logger = logging.getLogger(get_root_logger_name())
 
 
+def platform_mmap(name: str, size: int) -> mmap.mmap:
+    """Platform memory mapping"""
+    if PLATFORM == "Windows":
+        return windows_mmap(name, size)
+    return linux_mmap(name, size)
+
+
+def windows_mmap(name: str, size: int) -> mmap.mmap:
+    """Windows mmap"""
+    return mmap.mmap(-1, size, name)
+
+
+def linux_mmap(name: str, size: int) -> mmap.mmap:
+    """Linux mmap - read data from '/dev/shm/filename' if available"""
+    file = open("/dev/shm/" + name, "a+b")
+    if file.tell() == 0:
+        file.write(b"\0" * size)
+        file.flush()
+    return mmap.mmap(file.fileno(), size)
+
+
 class MMapControl:
     """Memory map control"""
 
@@ -70,7 +91,10 @@ class MMapControl:
         Args:
             access_mode: 0 = copy access, 1 = direct access.
         """
-        self._mmap_buffer = mmap.mmap(-1, ctypes.sizeof(self._struct), self._mmap_name)
+        self._mmap_buffer = platform_mmap(
+            name=self._mmap_name,
+            size=ctypes.sizeof(self._struct),
+        )
 
         if access_mode:
             self.data = self._struct.from_buffer(self._mmap_buffer)
