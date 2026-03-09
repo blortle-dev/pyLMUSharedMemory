@@ -606,7 +606,8 @@ for i in range(4):
     # Tire pressure (kPa)
     pressure = w.mPressure
 
-    # Tire temperature — 3 readings: left, center, right of tread (Kelvin)
+    # Tire temperature — 3 readings across the tread width: left, center, right
+    # (not inside, center, outside). Values are in Kelvin.
     temps_c = [w.mTemperature[j] - 273.15 for j in range(3)]
 
     # Brake temperature (Celsius)
@@ -1031,7 +1032,7 @@ On **Linux**, the shared memory file `/dev/shm/LMU_Data` is created automaticall
 
 6. **Temperature units vary.** Engine temperatures (`mEngineWaterTemp`, `mEngineOilTemp`) and brake temperatures (`mBrakeTemp`) are in **Celsius**. Tire temperatures (`mTemperature`, `mTireCarcassTemperature`, `mTireInnerLayerTemperature`) are in **Kelvin** (subtract 273.15 to get Celsius).
 
-7. **Sector times are cumulative.** `mBestSector2` is sector 1 + sector 2 time, not sector 2 alone. Subtract sector 1 to get the individual sector time.
+7. **Sector times are cumulative.** `mBestSector2` is sector 1 + sector 2 time, not sector 2 alone. Subtract sector 1 to get the individual sector time. Also note the unusual `mSector` numbering: `0` = sector 3, `1` = sector 1, `2` = sector 2 (see [Per-Vehicle Scoring](#per-vehicle-scoring)).
 
 8. **Close the connection when done.** Always call `info.close()` to properly release the memory mapping. Use a `try/finally` block to ensure cleanup.
 
@@ -1068,7 +1069,7 @@ Per-wheel data (4 per vehicle: FL, FR, RL, RR).
 | `mRideHeight` | float | meters | Ride height |
 | `mSuspForce` | float | Newtons | Pushrod load |
 | `mBrakeTemp` | float | °C | Brake temperature |
-| `mBrakePressure` | float | 0.0–1.0 | Brake pressure (will be kPa in future) |
+| `mBrakePressure` | float | 0.0–1.0 | Brake pressure (currently driver input fraction; may change to kPa in a future game version) |
 | `mRotation` | float | rad/s | Wheel rotation speed |
 | `mLateralPatchVel` | float | m/s | Lateral velocity at contact patch |
 | `mLongitudinalPatchVel` | float | m/s | Longitudinal velocity at contact patch |
