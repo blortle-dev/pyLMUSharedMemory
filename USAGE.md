@@ -35,6 +35,7 @@ A comprehensive guide to using the pyLMUSharedMemory library for reading real-ti
 - [Practical Examples](#practical-examples)
   - [Real-Time Telemetry Display](#real-time-telemetry-display)
   - [Lap Time Monitor](#lap-time-monitor)
+  - [Track Position](#track-position)
   - [Live Race Standings](#live-race-standings)
 - [Interpreting Encoded Values](#interpreting-encoded-values)
   - [Session Types](#session-types)
@@ -792,6 +793,56 @@ except KeyboardInterrupt:
 finally:
     info.close()
 ```
+
+### Track Position
+
+Display the player's current position on track as a fraction of the total lap distance (0.0 at the start/finish line, approaching 1.0 at the end of the lap):
+
+```python
+import time
+from pyLMUSharedMemory.lmu_mmap import MMapControl
+from pyLMUSharedMemory.lmu_data import LMUObjectOut, LMUConstants
+
+info = MMapControl(LMUConstants.LMU_SHARED_MEMORY_FILE, LMUObjectOut)
+info.create()
+
+try:
+    while True:
+        info.update()
+
+        scoring = info.data.scoring
+        session = scoring.scoringInfo
+        track_length = session.mLapDist  # total track length in meters
+
+        if track_length <= 0:
+            print("No active session. Waiting...")
+            time.sleep(1)
+            continue
+
+        num_vehicles = session.mNumVehicles
+        for i in range(num_vehicles):
+            veh = scoring.vehScoringInfo[i]
+            if veh.mIsPlayer:
+                # mLapDist is the vehicle's current distance around the track in meters
+                lap_fraction = veh.mLapDist / track_length
+
+                print(f"\rTrack position: {lap_fraction:.4f} "
+                      f"({lap_fraction:.1%}) — "
+                      f"{veh.mLapDist:.1f}m / {track_length:.1f}m",
+                      end="", flush=True)
+                break
+
+        time.sleep(0.1)
+
+except KeyboardInterrupt:
+    print("\nStopping...")
+finally:
+    info.close()
+```
+
+- `scoringInfo.mLapDist` is the **total track length** in meters.
+- `vehScoringInfo[i].mLapDist` is the **vehicle's current distance** around the track in meters.
+- Dividing the two gives a value from `0.0` (start/finish line) to just under `1.0` (end of lap), representing how much of the lap distance the player has covered.
 
 ### Live Race Standings
 
